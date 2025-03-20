@@ -1,9 +1,7 @@
 #include <Arduino.h>
 
 // Gyro
-#include <Wire.h>
-#include <Adafruit_BNO055.h>
-Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+#include "gyro/gyro.h"   // 旧ヘッダとオブジェクトの削除
 
 // Motor
 #include "ctromni/ctromni.h"
@@ -25,13 +23,16 @@ float Kp = 3.0, Ki = 0.1, Kd = 0.05;
 float integral = 0.0, previousError = 0.0;
 unsigned long lastTime = 0;
 
+// Gyroオブジェクト生成
+Gyro gyro;
+
 // --------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
 
-  // Gyro
-  while(!bno.begin()){
-    Serial.println("Could not find a valid BNO055 sensor, check wiring, address, sensor ID");
+  // Gyro初期化処理
+  while(!gyro.init()){
+    Serial.println("Gyro initialization failed, check wiring, address, sensor ID");
     delay(500);
   }
 
@@ -41,32 +42,24 @@ void setup() {
 }
 
 void loop() {
-
-  // Gyro
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  if(euler.x() >= 180) { euler.x() -= 360; }
-
-  Serial.println(euler.x());
+  // Gyroから角度取得
+  float currentAngle = gyro.getAngle();
+  Serial.println(currentAngle);
 
   unsigned long currentTime = millis();
   float dt = (currentTime - lastTime) / 1000.0; // dtを秒単位で計算
   lastTime = currentTime;
 
   // PID計算
-  float error = euler.x() - targetAngle;
-  if (abs(error) < 5.0) { error = 0; } // ±3度未満を0として処理
+  float error = currentAngle - targetAngle;
+  if (abs(error) < 5.0) { error = 0; } // ±3度未満は0とする
   integral += error * dt;
   float derivative = (error - previousError) / dt;
-  float pidOutput;
-  if(error == 0) {
-    pidOutput = 0;
-  } else {
-    pidOutput = Kp * error + Ki * integral + Kd * derivative;
-  }
+  float pidOutput = (error == 0) ? 0 : Kp * error + Ki * integral + Kd * derivative;
   previousError = error;
 
   if(digitalRead(switchPin) == HIGH){
-    omni.cal(100, 0 - euler.x(), pidOutput);
+    omni.cal(100, -currentAngle, pidOutput);
   } else {
     omni.cal(0, 0, pidOutput);
   }
