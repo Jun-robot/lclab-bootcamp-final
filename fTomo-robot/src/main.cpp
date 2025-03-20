@@ -50,10 +50,10 @@ void loop() {
 
   // 姿勢制御のPID計算
   float pidGyro = pid.update(currentAngle, dt);
-  // ±5°未満の場合はPID出力を0とする
-  // if (abs(currentAngle - 0.0) < 5.0) {
-  //   pidOutput = 0;
-  // }
+  //±3°未満の場合はPID出力を0とする
+  if (abs(currentAngle - 0.0) < 5.0) {
+    pidGyro = 0;
+  }
 
   if(digitalRead(switchPin) == HIGH){
     omni.cal(100, -currentAngle, pidGyro);
