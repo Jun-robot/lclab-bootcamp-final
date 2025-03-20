@@ -3,6 +3,7 @@ import socket
 import struct
 import numpy as np
 from bitalino import BITalino
+from plot import plot_emg, plot_emg_realtime, update_plot
 
 # BITalinoの設定
 macAddress = "98:D3:11:FE:03:6B"
@@ -24,6 +25,15 @@ print(device.version())
 device.start(samplingRate, channels)
 
 time.sleep(1)
+
+# 移動平均を計算するためのバッファ
+emg_buffer = []
+buffer_size = 10  # バッファサイズを設定
+emg_data = []  # EMGデータを保存するリストを追加
+speed_data = []  # Speedデータを保存するリストを追加
+
+# リアルタイムプロットの初期化
+fig, ax1, line1, ax2, line2 = plot_emg_realtime(emg_data, speed_data)
 
 try:
     while True:
@@ -50,26 +60,42 @@ try:
 
         # emg -> speed
         emg = emg - 512
+        emg_buffer.append(emg)
+        if len(emg_buffer) > buffer_size:
+            emg_buffer.pop(0)
+        emg_avg = np.mean(emg_buffer)
+        speed = max(min(emg_avg, 255), 0)
+
+        emg_data.append(emg)  # EMGデータをリストに追加
+        speed_data.append(speed)  # Speedデータをリストに追加
         
-
-
-
+        if len(emg_data) > 100:  # プロットするデータの長さを制限
+            emg_data.pop(0)
+        if len(speed_data) > 100:  # プロットするデータの長さを制限
+            speed_data.pop(0)
+        
+        update_plot(fig, ax1, line1, emg_data, ax2, line2, speed_data)  # プロットを更新
 
         # UDPで送信するデータをパック
         UDPangleX = max(min((angle+180)/1.4,255),0)
         UDPangleY = max(min(60,255),0)
-        UDPspeed = max(min(length,255),0)
+        if length < 30:
+            UDPspeed = 0
+        else:
+            UDPspeed = speed
         UDPdata = struct.pack("BBB", int(UDPangleX), UDPangleY,int(UDPspeed))
 
         # UDPパケット送信
         sock.sendto(UDPdata, (ESP32_IP, UDP_PORT))
-        print("Binary command sent:", (UDPangleX, UDPangleY, UDPspeed))
+        print("Binary command sent:", (int(UDPangleX), UDPangleY, int(UDPspeed)))
 
         # 0.008秒待つ
         time.sleep(0.008)
 
 except KeyboardInterrupt:
     print("Stopping acquisition")
+    #plot.ioff()
+    plot_emg(emg_data)  # プログラム終了時にEMGデータを描画
 
 device.stop()
 device.close()
