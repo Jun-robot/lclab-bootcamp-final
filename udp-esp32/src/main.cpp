@@ -2,10 +2,11 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-const char* ssid     = "JCOM_OIHI";       // ご自分のWiFiのSSIDに変更
-const char* password = "530741765746";   // ご自分のWiFiのパスワードに変更
+#include "mywifi.h" //gitignoreしてあるので、各自作ってね。
+// const char* ssid = "********";
+// const char* password = "*******";
 
-const int localPort = 8000;              // UDP受信用ポート（PC側と合わせる）
+const int localPort = 8000;
 
 WiFiUDP udp;
 

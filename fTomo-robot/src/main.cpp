@@ -23,19 +23,38 @@ unsigned long lastTime = 0;
 #include "gyro/gyro.h"
 Gyro gyro;
 
+// ----------espUdp----------
+#include "espUdp/espUdp.h"
+espUdp udp;
+
+int omni_speed = 0;
+int omni_angle = 0;
+
 // --------------------------------------------------------------
 void setup() {
+  pinMode(switchPin, INPUT_PULLUP);
+  pinMode(21, OUTPUT);
+  digitalWrite(21, LOW);
+  
   Serial.begin(115200);
+  Serial.println("Start");
+
+  // espUdpの初期化
+  udp.begin();
 
   // Gyro初期化処理
+  int n=0;
   while(!gyro.init()){
-    Serial.println("Gyro initialization failed, check wiring, address, sensor ID");
+    n++; Serial.print(n);
+    Serial.println(" Gyro initialization failed, check wiring, address, sensor ID");
     delay(500);
   }
 
   omni.init();
   omni.setInstallationAngles(45, 135, 225, 315);
   lastTime = millis(); // PID用の初期時間
+
+  digitalWrite(21, HIGH);
 }
 
 void loop() {
@@ -55,8 +74,17 @@ void loop() {
     pidGyro = 0;
   }
 
-  if(digitalRead(switchPin) == HIGH){
-    omni.cal(100, -currentAngle, pidGyro);
+  // espUdpから受信データを利用してモータ制御
+  ESPData udpData;
+  if (udp.readData(udpData)) {
+    // omni.cal(udpData.angleX, udpData.angleY, pidGyro);
+    omni_speed = udpData.speed;
+    omni_angle = udpData.angleX*1.4;
+  }
+
+  // スイッチが押されている場合はモータ停止
+  if (digitalRead(switchPin) == HIGH) {
+    omni.cal(omni_speed, omni_angle, pidGyro);
   } else {
     omni.cal(0, 0, pidGyro);
   }
