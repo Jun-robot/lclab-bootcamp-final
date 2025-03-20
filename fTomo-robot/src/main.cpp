@@ -1,13 +1,8 @@
 #include <Arduino.h>
-#include "pid/pid.h"  // 新規追加: PIDControllerの宣言をインクルード
 
-// Gyro
-#include "gyro/gyro.h"
-
-// Motor
+// ----------Motor----------
 #include "ctromni/ctromni.h"
 #include "drvmtr/drvmtr.h"
-
 DRVMTR motorA(10, 11);
 DRVMTR motorB(12, 13);
 DRVMTR motorC(18, 19);
@@ -15,16 +10,17 @@ DRVMTR motorD(16, 17);
 
 CTROMNI omni(&motorA, &motorB, &motorC, &motorD);
 
-// Switch
+// ----------Switch----------
 const int switchPin = 14;
 
+// ----------PID----------
+#include "pid/pid.h"
+PID pid(0.0, 3.0, 0.1, 0.05);
 // PID用の時間計測用変数
 unsigned long lastTime = 0;
 
-// 新規追加: PIDControllerのインスタンス作成
-PID pid(0.0, 3.0, 0.1, 0.05);
-
-// Gyroオブジェクト生成
+// ----------Gyro----------
+#include "gyro/gyro.h"
 Gyro gyro;
 
 // --------------------------------------------------------------
@@ -53,16 +49,15 @@ void loop() {
   lastTime = currentTime;
 
   // 姿勢制御のPID計算
-  float pidOutput = pid.update(currentAngle, dt);
+  float pidGyro = pid.update(currentAngle, dt);
   // ±5°未満の場合はPID出力を0とする
   // if (abs(currentAngle - 0.0) < 5.0) {
   //   pidOutput = 0;
   // }
 
-  
   if(digitalRead(switchPin) == HIGH){
-    omni.cal(100, -currentAngle, pidOutput);
+    omni.cal(100, -currentAngle, pidGyro);
   } else {
-    omni.cal(0, 0, pidOutput);
+    omni.cal(0, 0, pidGyro);
   }
 }
