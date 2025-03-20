@@ -1,7 +1,8 @@
 #include <Arduino.h>
+#include "pid/pid.h"  // 新規追加: PIDControllerの宣言をインクルード
 
 // Gyro
-#include "gyro/gyro.h"   // 旧ヘッダとオブジェクトの削除
+#include "gyro/gyro.h"
 
 // Motor
 #include "ctromni/ctromni.h"
@@ -17,11 +18,11 @@ CTROMNI omni(&motorA, &motorB, &motorC, &motorD);
 // Switch
 const int switchPin = 14;
 
-// PID制御用グローバル変数
-float targetAngle = 0.0;
-float Kp = 3.0, Ki = 0.1, Kd = 0.05;
-float integral = 0.0, previousError = 0.0;
+// PID用の時間計測用変数
 unsigned long lastTime = 0;
+
+// 新規追加: PIDControllerのインスタンス作成
+PIDController pid(0.0, 3.0, 0.1, 0.05);
 
 // Gyroオブジェクト生成
 Gyro gyro;
@@ -46,18 +47,19 @@ void loop() {
   float currentAngle = gyro.getAngle();
   Serial.println(currentAngle);
 
+  // PIDのdtを計算
   unsigned long currentTime = millis();
   float dt = (currentTime - lastTime) / 1000.0; // dtを秒単位で計算
   lastTime = currentTime;
 
-  // PID計算
-  float error = currentAngle - targetAngle;
-  if (abs(error) < 5.0) { error = 0; } // ±3度未満は0とする
-  integral += error * dt;
-  float derivative = (error - previousError) / dt;
-  float pidOutput = (error == 0) ? 0 : Kp * error + Ki * integral + Kd * derivative;
-  previousError = error;
+  // 姿勢制御のPID計算
+  float pidOutput = pid.update(currentAngle, dt);
+  // ±5°未満の場合はPID出力を0とする
+  // if (abs(currentAngle - 0.0) < 5.0) {
+  //   pidOutput = 0;
+  // }
 
+  
   if(digitalRead(switchPin) == HIGH){
     omni.cal(100, -currentAngle, pidOutput);
   } else {

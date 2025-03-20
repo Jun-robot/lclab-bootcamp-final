@@ -3,7 +3,6 @@
 // ...existing code...
 
 Gyro::Gyro() : sensor(55, 0x28) {
-    // コンストラクタ本体が必要なら追加
 }
 
 bool Gyro::init() {
