@@ -79,7 +79,7 @@ void loop() {
   if (udp.readData(udpData)) {
     // omni.cal(udpData.angleX, udpData.angleY, pidGyro);
     omni_speed = udpData.speed;
-    omni_angle = udpData.angleX*1.4;
+    omni_angle = udpData.angleX*1.4-180;
   }
 
   // スイッチが押されている場合はモータ停止
