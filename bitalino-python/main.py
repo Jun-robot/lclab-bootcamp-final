@@ -12,7 +12,8 @@ channels = [0, 1, 2]
 samplingRate = 100
 
 # UDPの設定
-ESP32_IP = "192.168.0.23"  # jcom
+# ESP32_IP = "192.168.0.23"  # jcom
+ESP32_IP = "192.168.99.218"
 UDP_PORT = 8000  # ESP32側の受信用ポート
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -60,13 +61,16 @@ try:
 
         # emg -> speed
         emg = emg - 512
-        emg_buffer.append(emg)
+        emg_data.append(emg)  # EMGデータをリストに追加
+        if 0 < abs(emg) < 5.0:
+            emg = 0
+        emg_buffer.append(abs(emg))
         if len(emg_buffer) > buffer_size:
             emg_buffer.pop(0)
         emg_avg = np.mean(emg_buffer)
-        speed = max(min(emg_avg, 255), 0)
 
-        emg_data.append(emg)  # EMGデータをリストに追加
+        emg_avg = emg_avg*emg_avg
+        speed = max(min(emg_avg, 255), 0)
         speed_data.append(speed)  # Speedデータをリストに追加
         
         if len(emg_data) > 100:  # プロットするデータの長さを制限
