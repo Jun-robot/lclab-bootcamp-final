@@ -1,7 +1,5 @@
 #include "gyro.h"
 
-// ...existing code...
-
 Gyro::Gyro() : sensor(55, 0x28) {
 }
 

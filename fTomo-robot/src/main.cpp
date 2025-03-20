@@ -22,7 +22,7 @@ const int switchPin = 14;
 unsigned long lastTime = 0;
 
 // 新規追加: PIDControllerのインスタンス作成
-PIDController pid(0.0, 3.0, 0.1, 0.05);
+PID pid(0.0, 3.0, 0.1, 0.05);
 
 // Gyroオブジェクト生成
 Gyro gyro;
