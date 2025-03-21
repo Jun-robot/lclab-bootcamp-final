@@ -3,6 +3,7 @@
 #include <WiFiUdp.h>
 
 #include "mywifi.h" //gitignoreしてあるので、各自作ってね。
+// 内容はこれ↓だけで良き。
 // const char* ssid = "********";
 // const char* password = "*******";
 
